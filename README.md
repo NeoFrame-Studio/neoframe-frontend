@@ -1,16 +1,68 @@
-# React + Vite
+# NeoFrame Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend oficial do NeoFrame SaaS.
 
-Currently, two official plugins are available:
+Interface para:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- upload de arquivos
+- criação de vídeos
+- acompanhar jobs
+- login futuro
+- dashboard do usuário
 
-## React Compiler
+## Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React
+- Vite
+- Tailwind CSS
+- Axios
+- React Router
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Rodando localmente
+
+### Instalar dependências
+
+```bash
+npm install
+````
+
+### Executar
+
+```bash
+npm run dev
+```
+
+---
+
+## Build produção
+
+```bash
+npm run build
+```
+
+---
+
+## Docker
+
+```bash
+docker build -t neoframe-frontend:1.0.0 .
+docker run -p 3000:80 neoframe-frontend:1.0.0
+```
+
+---
+
+## Roadmap
+
+* Login / Register
+* Dashboard Jobs
+* Billing page
+* Subscription plans
+* Admin panel
+
+---
+
+## Author
+
+NeoFrame Project
