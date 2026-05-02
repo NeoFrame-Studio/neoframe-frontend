@@ -51,6 +51,13 @@ docker build -t neoframe-frontend:1.0.0 .
 docker run -p 3000:80 neoframe-frontend:1.0.0
 ```
 
+### To Deploy
+```
+docker build -t seuuser/neoframe-frontend:1.0.0 .
+docker push seuuser/neoframe-frontend:1.0.0
+```
+
+
 ---
 
 ## Roadmap
