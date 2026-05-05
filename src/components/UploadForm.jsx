@@ -13,6 +13,32 @@ export default function UploadForm() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
+  // 🚀 função que faz upload direto no S3
+  async function uploadFile(file) {
+    console.log("🔑 Pedindo URL assinada para:", file.name);
+
+    const res = await client.post("/s3/upload-url", {
+      fileName: file.name
+    });
+
+    const { url } = res.data;
+
+    console.log("⬆️ Fazendo upload direto:", file.name);
+
+    await fetch(url, {
+      method: "PUT",
+      body: file
+    });
+
+    // extrai o "caminho" (key do arquivo)
+    //const path = url.split(".amazonaws.com/")[1].split("?")[0];
+    const path = url.split("/neoframe/")[1].split("?")[0];
+    
+    console.log("✅ Upload finalizado:", path);
+
+    return path;
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
 
@@ -23,37 +49,31 @@ export default function UploadForm() {
       setLoading(true);
       setMsg("Enviando arquivos...");
 
-      // 🔍 DEBUG arquivos
-      console.log("📁 FILES:", {
-        roteiro,
-        intro,
-        transicao,
-        musica
-      });
+      // 🔍 validação básica
+      if (!roteiro || !intro || !transicao || !musica) {
+        setMsg("Selecione todos os arquivos!");
+        return;
+      }
 
-      const formData = new FormData();
-      formData.append("roteiro", roteiro);
-      formData.append("intro", intro);
-      formData.append("transicao", transicao);
-      formData.append("musica", musica);
+      // 🚀 uploads paralelos (rápido)
+      const [roteiroPath, introPath, transicaoPath, musicaPath] =
+        await Promise.all([
+          uploadFile(roteiro),
+          uploadFile(intro),
+          uploadFile(transicao),
+          uploadFile(musica)
+        ]);
 
-      // 🚀 UPLOAD
-      console.log("⬆️ ENVIANDO /upload...");
+      const caminhos = {
+        roteiro: roteiroPath,
+        intro: introPath,
+        transicao: transicaoPath,
+        musica: musicaPath
+      };
 
-      const uploadResponse = await client.post("/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data"
-        }
-      });
-
-      const caminhos = uploadResponse.data;
-
-      console.log("✅ UPLOAD RESPONSE =", caminhos);
+      console.log("📦 CAMINHOS =", caminhos);
 
       setMsg("Criando job...");
-
-      // 🚀 JOB
-      console.log("📤 CHAMANDO /videos...");
 
       const jobPayload = {
         caminhos,
@@ -62,15 +82,15 @@ export default function UploadForm() {
         token: ""
       };
 
-      console.log("📦 PAYLOAD =", jobPayload);
+      console.log("📤 ENVIANDO JOB =", jobPayload);
 
       await client.post("/videos", {
         input: JSON.stringify(jobPayload)
       });
 
-      console.log("✅ JOB ENVIADO COM SUCESSO");
+      console.log("✅ JOB ENVIADO");
 
-      setMsg("Job enviado com sucesso.");
+      setMsg("Job enviado com sucesso!");
     } catch (error) {
       console.error("❌ ERRO COMPLETO:", error);
 
