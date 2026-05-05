@@ -13,7 +13,7 @@ export default function UploadForm() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
-  // 🚀 função que faz upload direto no S3
+  // 🚀 Upload direto S3 (corrigido)
   async function uploadFile(file) {
     console.log("🔑 Pedindo URL assinada para:", file.name);
 
@@ -21,22 +21,25 @@ export default function UploadForm() {
       fileName: file.name
     });
 
-    const { url } = res.data;
+    const { url, key } = res.data; // 🔥 backend deve mandar a key
 
     console.log("⬆️ Fazendo upload direto:", file.name);
 
-    await fetch(url, {
+    const uploadRes = await fetch(url, {
       method: "PUT",
-      body: file
+      body: file,
+      headers: {
+        "Content-Type": file.type || "application/octet-stream"
+      }
     });
 
-    // extrai o "caminho" (key do arquivo)
-    //const path = url.split(".amazonaws.com/")[1].split("?")[0];
-    const path = url.split("/neoframe/")[1].split("?")[0];
-    
-    console.log("✅ Upload finalizado:", path);
+    if (!uploadRes.ok) {
+      throw new Error(`Erro upload: ${uploadRes.status}`);
+    }
 
-    return path;
+    console.log("✅ Upload finalizado:", key);
+
+    return key; // 🔥 usa key direto (sem hack de string)
   }
 
   async function handleSubmit(e) {
@@ -49,13 +52,12 @@ export default function UploadForm() {
       setLoading(true);
       setMsg("Enviando arquivos...");
 
-      // 🔍 validação básica
       if (!roteiro || !intro || !transicao || !musica) {
         setMsg("Selecione todos os arquivos!");
         return;
       }
 
-      // 🚀 uploads paralelos (rápido)
+      // 🚀 uploads paralelos
       const [roteiroPath, introPath, transicaoPath, musicaPath] =
         await Promise.all([
           uploadFile(roteiro),
