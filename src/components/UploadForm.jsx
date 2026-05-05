@@ -16,15 +16,29 @@ export default function UploadForm() {
   async function handleSubmit(e) {
     e.preventDefault();
 
+    console.log("🟢 CLIQUEI NO BOTÃO");
+    console.log("🌐 API URL:", import.meta.env.VITE_API_URL);
+
     try {
       setLoading(true);
       setMsg("Enviando arquivos...");
+
+      // 🔍 DEBUG arquivos
+      console.log("📁 FILES:", {
+        roteiro,
+        intro,
+        transicao,
+        musica
+      });
 
       const formData = new FormData();
       formData.append("roteiro", roteiro);
       formData.append("intro", intro);
       formData.append("transicao", transicao);
       formData.append("musica", musica);
+
+      // 🚀 UPLOAD
+      console.log("⬆️ ENVIANDO /upload...");
 
       const uploadResponse = await client.post("/upload", formData, {
         headers: {
@@ -34,28 +48,39 @@ export default function UploadForm() {
 
       const caminhos = uploadResponse.data;
 
+      console.log("✅ UPLOAD RESPONSE =", caminhos);
+
       setMsg("Criando job...");
 
-      console.log("UPLOAD RESPONSE =", uploadResponse.data)
+      // 🚀 JOB
+      console.log("📤 CHAMANDO /videos...");
 
-        console.log("JOB ENVIADO =", {
-        caminhos: uploadResponse.data,
+      const jobPayload = {
+        caminhos,
         tema,
-        modo
-        })
+        modo,
+        token: ""
+      };
+
+      console.log("📦 PAYLOAD =", jobPayload);
 
       await client.post("/videos", {
-        input: JSON.stringify({
-          caminhos,
-          tema,
-          modo,
-          token: ""
-        })
+        input: JSON.stringify(jobPayload)
       });
+
+      console.log("✅ JOB ENVIADO COM SUCESSO");
 
       setMsg("Job enviado com sucesso.");
     } catch (error) {
-      console.error(error);
+      console.error("❌ ERRO COMPLETO:", error);
+
+      if (error.response) {
+        console.error("📡 STATUS:", error.response.status);
+        console.error("📄 DATA:", error.response.data);
+      } else {
+        console.error("🚫 SEM RESPONSE (CORS ou conexão)");
+      }
+
       setMsg("Erro ao processar.");
     } finally {
       setLoading(false);
