@@ -15,31 +15,31 @@ export default function UploadForm() {
 
   // 🚀 Upload direto S3 (corrigido)
   async function uploadFile(file) {
-    const fileName = `${crypto.randomUUID()}_${file.name}`;
+    console.log("🔑 Pedindo URL assinada para:", file.name);
 
-    console.log("⬆️ Upload Supabase:", fileName);
+    const res = await client.post("/s3/upload-url", {
+      fileName: file.name
+    });
 
-    const formData = new FormData();
-    formData.append("file", file);
+    const { url, key } = res.data; // 🔥 backend deve mandar a key
 
-    const res = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/neoframe/${fileName}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_KEY}`
-        },
-        body: formData
+    console.log("⬆️ Fazendo upload direto:", file.name);
+
+    const uploadRes = await fetch(url, {
+      method: "PUT",
+      body: file,
+      headers: {
+        "Content-Type": file.type || "application/octet-stream"
       }
-    );
+    });
 
-    if (!res.ok) {
-      throw new Error("Erro upload Supabase");
+    if (!uploadRes.ok) {
+      throw new Error(`Erro upload: ${uploadRes.status}`);
     }
 
-    console.log("✅ Upload finalizado:", fileName);
+    console.log("✅ Upload finalizado:", key);
 
-    return fileName; // 🔥 AQUI ESTÁ A CORREÇÃO
+    return key; // 🔥 usa key direto (sem hack de string)
   }
 
   async function handleSubmit(e) {
