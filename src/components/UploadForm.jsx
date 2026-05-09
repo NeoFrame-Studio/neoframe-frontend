@@ -13,6 +13,11 @@ export default function UploadForm() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
+  const [jobId, setJobId] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [status, setStatus] = useState("");
+  const [videoUrl, setVideoUrl] = useState(null);
+
   // 🚀 Upload direto S3 (corrigido)
   async function uploadFile(file) {
     console.log("🔑 Pedindo URL assinada para:", file.name);
@@ -21,7 +26,7 @@ export default function UploadForm() {
       fileName: file.name
     });
 
-    const { url, key } = res.data; // 🔥 backend deve mandar a key
+    const { url, key } = res.data;
 
     console.log("⬆️ Fazendo upload direto:", file.name);
 
@@ -39,14 +44,49 @@ export default function UploadForm() {
 
     console.log("✅ Upload finalizado:", key);
 
-    return key; // 🔥 usa key direto (sem hack de string)
+    return key;
+  }
+
+  // 📡 POLLING DO JOB
+  function startPolling(id) {
+    console.log("📡 Iniciando polling:", id);
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await client.get(`/videos/${id}`);
+        const job = res.data;
+
+        console.log("📦 UPDATE JOB:", job);
+
+        setProgress(job.progress || 0);
+        setStatus(job.status || "");
+
+        if (job.status === "DONE") {
+          clearInterval(interval);
+          setLoading(false);
+          setMsg("Vídeo pronto!");
+          setVideoUrl(job.outputUrl);
+        }
+
+        if (job.status === "ERROR") {
+          clearInterval(interval);
+          setLoading(false);
+          setMsg("Erro ao gerar vídeo.");
+        }
+
+      } catch (err) {
+        console.error("❌ ERRO POLLING:", err);
+        clearInterval(interval);
+        setLoading(false);
+        setMsg("Erro ao consultar status.");
+      }
+    }, 2000);
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
 
     console.log("🟢 CLIQUEI NO BOTÃO");
-    console.log("🌐 API URL:", import.meta.env.VITE_API_URL);
 
     try {
       setLoading(true);
@@ -54,6 +94,7 @@ export default function UploadForm() {
 
       if (!roteiro || !intro || !transicao || !musica) {
         setMsg("Selecione todos os arquivos!");
+        setLoading(false);
         return;
       }
 
@@ -84,27 +125,23 @@ export default function UploadForm() {
         token: ""
       };
 
-      console.log("📤 ENVIANDO JOB =", jobPayload);
-
-      await client.post("/videos", {
+      const response = await client.post("/videos", {
         input: JSON.stringify(jobPayload)
       });
 
-      console.log("✅ JOB ENVIADO");
+      const createdJobId = response.data.id;
 
-      setMsg("Job enviado com sucesso!");
+      console.log("🆔 JOB ID:", createdJobId);
+
+      setJobId(createdJobId);
+
+      startPolling(createdJobId);
+
+      setMsg("Processando vídeo...");
+
     } catch (error) {
       console.error("❌ ERRO COMPLETO:", error);
-
-      if (error.response) {
-        console.error("📡 STATUS:", error.response.status);
-        console.error("📄 DATA:", error.response.data);
-      } else {
-        console.error("🚫 SEM RESPONSE (CORS ou conexão)");
-      }
-
       setMsg("Erro ao processar.");
-    } finally {
       setLoading(false);
     }
   }
@@ -160,6 +197,40 @@ export default function UploadForm() {
       {msg && (
         <div className="text-sm text-slate-300 mt-2">
           {msg}
+        </div>
+      )}
+
+      {loading && (
+        <div className="space-y-2 mt-4">
+          <div className="w-full bg-slate-700 rounded-full h-4 overflow-hidden">
+            <div
+              className="bg-blue-500 h-full transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          <div className="text-sm text-slate-300">
+            {progress}% - {status}
+          </div>
+        </div>
+      )}
+
+      {videoUrl && (
+        <div className="space-y-4 mt-6">
+          <video
+            controls
+            className="w-full rounded-xl"
+            src={videoUrl}
+          />
+
+          <a
+            href={videoUrl}
+            target="_blank"
+            download
+            className="block bg-green-600 hover:bg-green-700 p-3 rounded-xl text-center font-semibold"
+          >
+            Baixar Vídeo
+          </a>
         </div>
       )}
     </form>
