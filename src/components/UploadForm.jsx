@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import client from "../api/client";
 
 // --- COMPONENTE DE CURADORIA (O RETÂNGULO DE VIDRO) ---
@@ -14,7 +14,8 @@ function MediaCurator({ jobData, onFinish }) {
   const currentImageData = currentTopic?.imagens[0];
 
   // Busca inicial automática ao carregar um novo tópico
-  useState(() => {
+  // CORREÇÃO: Usar useEffect em vez de useState para efeitos colaterais
+  useEffect(() => {
     if (currentImageData) {
       handleSearch(currentImageData.frase_de_busca);
     }
@@ -42,8 +43,7 @@ function MediaCurator({ jobData, onFinish }) {
     if (currentIndex < jobData.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setSelectedUrl("");
-      // Dispara a busca do próximo automaticamente
-      handleSearch(jobData[currentIndex + 1].imagens[0].frase_de_busca);
+      // A busca do próximo é disparada automaticamente pelo useEffect
     } else {
       // Se era o último, finaliza e devolve o JSON completo
       onFinish(jobData);
@@ -51,11 +51,11 @@ function MediaCurator({ jobData, onFinish }) {
   }
 
   return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
-    <div 
-      style={{ transform: 'scale(0.8)', transformOrigin: 'center' }}
-      className="bg-white/10 backdrop-blur-2xl border border-white/20 p-8 rounded-[2rem] shadow-2xl w-full max-w-4xl text-white"
-    >
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+      <div 
+        style={{ transform: 'scale(0.8)', transformOrigin: 'center' }}
+        className="bg-white/10 backdrop-blur-2xl border border-white/20 p-8 rounded-[2rem] shadow-2xl w-full max-w-4xl text-white"
+      >
         
         {/* Cabeçalho */}
         <div className="mb-8 text-center">
@@ -159,7 +159,7 @@ export default function UploadForm() {
     return key;
   }
 
-  // 📡 POLLING DO JOB (Modificado para interceptar Curadoria)
+  // 📡 POLLING DO JOB (Modificado para baixar o JSON do S3)
   function startPolling(id) {
     const interval = setInterval(async () => {
       try {
@@ -172,13 +172,24 @@ export default function UploadForm() {
         // 🟢 INTERCEPTAÇÃO PARA CURADORIA
         if (job.status === "WAITING_CURATION") {
           clearInterval(interval);
-          setLoading(false);
-          setMsg("");
-          setCurationData(job.data_json); // Abre o modal de vidro com os dados
+          
+          // Baixa o JSON usando o link que o Python salvou no banco através do Java
+          if (job.outputUrl) {
+            setMsg("Baixando dados do roteiro...");
+            const jsonRes = await fetch(job.outputUrl);
+            const jsonData = await jsonRes.json();
+            
+            setLoading(false);
+            setMsg("");
+            setCurationData(jsonData); // Abre o modal de vidro com os dados baixados
+          } else {
+             setMsg("Erro: URL do JSON não encontrada.");
+             setLoading(false);
+          }
           return;
         }
 
-        if (job.status === "DONE") {
+        if (job.status === "COMPLETED" || job.status === "DONE") {
           clearInterval(interval);
           setLoading(false);
           setMsg("Vídeo pronto!");
@@ -202,15 +213,19 @@ export default function UploadForm() {
   async function finishCuration(updatedJson) {
     setCurationData(null);
     setLoading(true);
-    setMsg("Enviando escolhas e iniciando renderização...");
+    setMsg("Enviando escolhas e iniciando renderização final...");
 
     try {
-      // Envia o JSON com os caminhos das imagens escolhidas de volta
-      await client.post(`/videos/${jobId}/resume`, { 
-        termos_chaves: updatedJson 
+      // Extrai apenas as URLs finais que o usuário escolheu
+      // assumindo que a estrutura do seu JSON tem a propriedade 'path' preenchida
+      const URLsEscolhidas = updatedJson.map(topic => topic.imagens[0].path);
+
+      // Envia as escolhas para o novo endpoint do Java
+      await client.post(`/videos/${jobId}/finalize`, { 
+        escolhas: URLsEscolhidas 
       });
       
-      // Reinicia o polling para acompanhar o progresso do Render final
+      // Reinicia o polling para acompanhar o progresso da Fase B
       startPolling(jobId);
     } catch (error) {
       setMsg("Erro ao salvar curadoria.");
