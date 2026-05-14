@@ -23,7 +23,9 @@ function MediaCurator({ jobData, onFinish }) {
     setSearchTerm(term);
     try {
       const res = await client.get(`/scraper/search?q=${encodeURIComponent(term)}`);
-      setImages(res.data.urls || []); 
+      // O seu JSON já é a lista, então usamos res.data diretamente
+      const listaDeImagens = Array.isArray(res.data) ? res.data : [];
+      setImages(listaDeImagens); 
     } catch (err) {
       console.error("Erro ao buscar imagens", err);
       setImages([]);
@@ -84,19 +86,28 @@ function MediaCurator({ jobData, onFinish }) {
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-6 mb-10">
-            {images.map((url, i) => (
+            {/* Grid de Imagens - Ajustado para Objetos */}
+            {images.map((imgObj, i) => (
               <div 
                 key={i}
-                onClick={() => setSelectedUrl(url)}
+                onClick={() => setSelectedUrl(imgObj.url)} // Salva a URL original para o vídeo
                 className={`group relative aspect-video rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 ${
-                  selectedUrl === url 
+                  selectedUrl === imgObj.url 
                   ? 'ring-4 ring-blue-500 scale-[1.02] shadow-blue-500/20' 
                   : 'opacity-60 hover:opacity-100 border border-white/5'
                 }`}
               >
-                <img src={url} alt="opção" className="w-full h-full object-cover" />
-                {selectedUrl === url && (
-                    <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center"></div>
+                {/* Use imgObj.thumbnail para carregar mais rápido no front */}
+                <img 
+                  src={imgObj.thumbnail || imgObj.url} 
+                  alt={imgObj.title} 
+                  className="w-full h-full object-cover" 
+                />
+                
+                {selectedUrl === imgObj.url && (
+                    <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
+                      <span className="bg-blue-600 p-2 rounded-full">✓</span>
+                    </div>
                 )}
               </div>
             ))}
