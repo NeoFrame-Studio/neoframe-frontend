@@ -44,7 +44,7 @@ function MediaCurator({ jobData, onFinish }) {
       // 3. Garante que estamos pegando o array (caso venha dentro de .urls ou direto na raiz)
       const data = rawData.urls || rawData; 
       
-      // 4. Atualiza o estado verificando se realmente é um array
+      // 4. Atualiza o estado
       setImages(Array.isArray(data) ? data : []);
       
     } catch (err) {
@@ -219,7 +219,7 @@ export default function UploadForm() {
     }, 2000);
   }
 
-  // 🚀 RETOMAR APÓS CURADORIA
+  // 🚀 RETOMAR APÓS CURADORIA (AJUSTADO APENAS A CHAVE DE ENVIO)
   async function finishCuration(updatedJson) {
     setCurationData(null);
     setLoading(true);
@@ -228,7 +228,7 @@ export default function UploadForm() {
     try {
       const URLsEscolhidas = updatedJson.map(topic => topic.imagens[0].path);
 
-      // Enviando para a rota que continuará o fluxo
+      // Enviando para a rota do Java que continuará o fluxo
       await client.post(`/videos/${jobId}/finalize`, { 
         urlsEscolhidas: URLsEscolhidas 
       });
