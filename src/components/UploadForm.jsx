@@ -27,11 +27,24 @@ function MediaCurator({ jobData, onFinish }) {
     try {
       const res = await client.get(`/scraper/search?q=${encodeURIComponent(term)}`);
       
-      // LOG DE CONTROLE: Abra o console (F12) e veja se isso imprime a lista
       console.log("DADOS RECEBIDOS DO BACKEND:", res.data);
 
-      // Garante que estamos pegando um array, independente se vier em .urls ou direto
-      const data = res.data.urls || res.data; 
+      // 1. Pega os dados recebidos
+      let rawData = res.data;
+
+      // 2. Se o backend mandou uma String, forçamos a conversão para Objeto/Array JavaScript
+      if (typeof rawData === "string") {
+        try {
+          rawData = JSON.parse(rawData);
+        } catch (e) {
+          console.error("Erro ao fazer o parse do JSON:", e);
+        }
+      }
+
+      // 3. Garante que estamos pegando o array (caso venha dentro de .urls ou direto na raiz)
+      const data = rawData.urls || rawData; 
+      
+      // 4. Atualiza o estado verificando se realmente é um array
       setImages(Array.isArray(data) ? data : []);
       
     } catch (err) {
@@ -206,7 +219,7 @@ export default function UploadForm() {
     }, 2000);
   }
 
-  // 🚀 RETOMAR APÓS CURADORIA (AJUSTADO APENAS A CHAVE DE ENVIO)
+  // 🚀 RETOMAR APÓS CURADORIA
   async function finishCuration(updatedJson) {
     setCurationData(null);
     setLoading(true);
@@ -215,7 +228,7 @@ export default function UploadForm() {
     try {
       const URLsEscolhidas = updatedJson.map(topic => topic.imagens[0].path);
 
-      // Enviando para a rota do Java que continuará o fluxo
+      // Enviando para a rota que continuará o fluxo
       await client.post(`/videos/${jobId}/finalize`, { 
         urlsEscolhidas: URLsEscolhidas 
       });
