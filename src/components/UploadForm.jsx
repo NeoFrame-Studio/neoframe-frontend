@@ -10,24 +10,32 @@ function MediaCurator({ jobData, onFinish }) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const currentTopic = jobData[currentIndex];
-  const currentImageData = currentTopic?.imagens[0];
+  // Pegamos a frase de busca do primeiro item de imagem do tópico
+  const currentImageData = currentTopic?.imagens?.[0];
 
+  // Sincroniza o termo de busca quando muda o tópico
   useEffect(() => {
-    if (currentImageData) {
+    if (currentImageData?.frase_de_busca) {
+      setSearchTerm(currentImageData.frase_de_busca);
       handleSearch(currentImageData.frase_de_busca);
     }
-  }, [currentIndex]);
+  }, [currentIndex, currentImageData]);
 
   async function handleSearch(term) {
+    if (!term) return;
     setLoading(true);
-    setSearchTerm(term);
     try {
       const res = await client.get(`/scraper/search?q=${encodeURIComponent(term)}`);
-      // O seu JSON já é a lista, então usamos res.data diretamente
-      const listaDeImagens = Array.isArray(res.data) ? res.data : [];
-      setImages(listaDeImagens); 
+      
+      // LOG DE CONTROLE: Abra o console (F12) e veja se isso imprime a lista
+      console.log("DADOS RECEBIDOS DO BACKEND:", res.data);
+
+      // Garante que estamos pegando um array, independente se vier em .urls ou direto
+      const data = res.data.urls || res.data; 
+      setImages(Array.isArray(data) ? data : []);
+      
     } catch (err) {
-      console.error("Erro ao buscar imagens", err);
+      console.error("Erro na busca:", err);
       setImages([]);
     } finally {
       setLoading(false);
@@ -35,101 +43,90 @@ function MediaCurator({ jobData, onFinish }) {
   }
 
   function handleContinue() {
-    currentImageData.path = selectedUrl; 
+    // Salva a URL escolhida no objeto que será devolvido ao Python
+    if (currentImageData) {
+      currentImageData.path = selectedUrl;
+    }
 
     if (currentIndex < jobData.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setSelectedUrl("");
+      setImages([]); // Limpa para carregar as próximas
     } else {
       onFinish(jobData);
     }
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
-      <div 
-        style={{ transform: 'scale(0.8)', transformOrigin: 'center' }}
-        className="bg-white/10 backdrop-blur-2xl border border-white/20 p-8 rounded-[2rem] shadow-2xl w-full max-w-4xl text-white"
-      >
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4">
+      <div className="bg-slate-900 border border-white/10 p-8 rounded-[2rem] shadow-2xl w-full max-w-5xl text-white">
         
-        {/* Cabeçalho */}
-        <div className="mb-8 text-center">
-          <p className="text-blue-400 text-xs font-bold uppercase tracking-tighter mb-2">
-            Passo {currentIndex + 1} de {jobData.length}
-          </p>
-          <h2 className="text-2xl font-medium leading-relaxed">
-            "{currentImageData?.frase_dita}"
-          </h2>
+        <div className="mb-6 flex justify-between items-end">
+           <div>
+              <p className="text-blue-400 text-xs font-bold uppercase mb-1">Tópico {currentIndex + 1} de {jobData.length}</p>
+              <h2 className="text-xl font-semibold text-slate-200">"{currentImageData?.frase_dita}"</h2>
+           </div>
+           <p className="text-slate-500 text-sm">ID: {currentTopic?.id || 'N/A'}</p>
         </div>
 
-        {/* Busca */}
-        <div className="flex gap-3 mb-8">
+        <div className="flex gap-2 mb-6">
           <input 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Pesquisar imagens..."
-            className="flex-1 bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-blue-500"
           />
-          <button 
-            onClick={() => handleSearch(searchTerm)}
-            className="bg-white/10 hover:bg-white/20 px-6 rounded-2xl transition-colors"
-          >
+          <button onClick={() => handleSearch(searchTerm)} className="bg-blue-600 px-6 rounded-xl hover:bg-blue-500 transition-all">
             Buscar
           </button>
         </div>
 
-        {/* Grid de Imagens */}
-        {loading ? (
-          <div className="h-72 flex flex-col items-center justify-center space-y-4">
-             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
-             <p className="text-white/50 animate-pulse">Buscando as melhores imagens...</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-6 mb-10">
-            {/* Grid de Imagens - Ajustado para Objetos */}
-            {images.map((imgObj, i) => (
-              <div 
-                key={i}
-                onClick={() => setSelectedUrl(imgObj.url)} // Salva a URL original para o vídeo
-                className={`group relative aspect-video rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 ${
-                  selectedUrl === imgObj.url 
-                  ? 'ring-4 ring-blue-500 scale-[1.02] shadow-blue-500/20' 
-                  : 'opacity-60 hover:opacity-100 border border-white/5'
-                }`}
-              >
-                {/* Use imgObj.thumbnail para carregar mais rápido no front */}
-                <img 
-                  src={imgObj.thumbnail || imgObj.url} 
-                  alt={imgObj.title} 
-                  className="w-full h-full object-cover" 
-                />
-                
-                {selectedUrl === imgObj.url && (
-                    <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
-                      <span className="bg-blue-600 p-2 rounded-full">✓</span>
-                    </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="min-h-[400px]">
+          {loading ? (
+            <div className="h-72 flex flex-col items-center justify-center">
+               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+               <p className="text-slate-400">Consultando bancos de imagens...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-4">
+              {images.length > 0 ? images.map((img, i) => {
+                // Resolve o problema de ser String ou Objeto
+                const thumb = typeof img === 'string' ? img : img.thumbnail;
+                const full = typeof img === 'string' ? img : img.url;
 
-        {/* Rodapé de Ações */}
-        <div className="flex justify-between items-center border-t border-white/10 pt-6">
-          <button className="px-6 py-4 rounded-2xl text-sm text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-300">
-            Upload Imagem
-          </button>
-          
+                return (
+                  <div 
+                    key={i}
+                    onClick={() => setSelectedUrl(full)}
+                    className={`relative aspect-video rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${
+                      selectedUrl === full ? 'border-blue-500 scale-95' : 'border-transparent opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={thumb} className="w-full h-full object-cover" alt="preview" />
+                    {selectedUrl === full && (
+                      <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
+                        <div className="bg-blue-500 rounded-full p-1">✓</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              }) : (
+                <div className="col-span-3 h-72 flex items-center justify-center border border-dashed border-white/10 rounded-2xl">
+                   <p className="text-slate-500">Nenhuma imagem encontrada. Tente outro termo.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end mt-8 pt-6 border-t border-white/5">
           <button 
-            disabled={!selectedUrl}
+            disabled={!selectedUrl || loading}
             onClick={handleContinue}
-            className={`px-10 py-4 rounded-2xl font-bold transition-all duration-300 ${
-              selectedUrl 
-              ? 'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/30' 
-              : 'bg-white/5 text-white/20 cursor-not-allowed'
+            className={`px-12 py-4 rounded-2xl font-bold transition-all ${
+              selectedUrl && !loading ? 'bg-blue-600 hover:bg-blue-500 shadow-lg' : 'bg-slate-800 text-slate-500'
             }`}
           >
-            {currentIndex < jobData.length - 1 ? "Próxima Imagem" : "Concluir e Renderizar"}
+            {currentIndex < jobData.length - 1 ? "Próxima Etapa" : "Finalizar Renderização"}
           </button>
         </div>
       </div>
