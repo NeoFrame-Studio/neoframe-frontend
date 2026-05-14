@@ -9,12 +9,9 @@ function MediaCurator({ jobData, onFinish }) {
   const [selectedUrl, setSelectedUrl] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // O JSON que você mandou tem uma estrutura de tópicos -> imagens
   const currentTopic = jobData[currentIndex];
   const currentImageData = currentTopic?.imagens[0];
 
-  // Busca inicial automática ao carregar um novo tópico
-  // CORREÇÃO: Usar useEffect em vez de useState para efeitos colaterais
   useEffect(() => {
     if (currentImageData) {
       handleSearch(currentImageData.frase_de_busca);
@@ -25,7 +22,6 @@ function MediaCurator({ jobData, onFinish }) {
     setLoading(true);
     setSearchTerm(term);
     try {
-      // Endpoint que você criará no Python para retornar 6 URLs
       const res = await client.get(`/scraper/search?q=${encodeURIComponent(term)}`);
       setImages(res.data.urls || []); 
     } catch (err) {
@@ -37,15 +33,12 @@ function MediaCurator({ jobData, onFinish }) {
   }
 
   function handleContinue() {
-    // Salva a URL selecionada no objeto do tópico atual
     currentImageData.path = selectedUrl; 
 
     if (currentIndex < jobData.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setSelectedUrl("");
-      // A busca do próximo é disparada automaticamente pelo useEffect
     } else {
-      // Se era o último, finaliza e devolve o JSON completo
       onFinish(jobData);
     }
   }
@@ -149,7 +142,6 @@ export default function UploadForm() {
   const [status, setStatus] = useState("");
   const [videoUrl, setVideoUrl] = useState(null);
 
-  // NOVO: Estado para a curadoria
   const [curationData, setCurationData] = useState(null);
 
   async function uploadFile(file) {
@@ -159,7 +151,6 @@ export default function UploadForm() {
     return key;
   }
 
-  // 📡 POLLING DO JOB (Modificado para baixar o JSON do S3)
   function startPolling(id) {
     const interval = setInterval(async () => {
       try {
@@ -169,11 +160,9 @@ export default function UploadForm() {
         setProgress(job.progress || 0);
         setStatus(job.status || "");
 
-        // 🟢 INTERCEPTAÇÃO PARA CURADORIA
         if (job.status === "WAITING_CURATION") {
           clearInterval(interval);
           
-          // Baixa o JSON usando o link que o Python salvou no banco através do Java
           if (job.outputUrl) {
             setMsg("Baixando dados do roteiro...");
             const jsonRes = await fetch(job.outputUrl);
@@ -181,7 +170,7 @@ export default function UploadForm() {
             
             setLoading(false);
             setMsg("");
-            setCurationData(jsonData); // Abre o modal de vidro com os dados baixados
+            setCurationData(jsonData); 
           } else {
              setMsg("Erro: URL do JSON não encontrada.");
              setLoading(false);
@@ -209,23 +198,20 @@ export default function UploadForm() {
     }, 2000);
   }
 
-  // 🚀 RETOMAR APÓS CURADORIA
+  // 🚀 RETOMAR APÓS CURADORIA (AJUSTADO APENAS A CHAVE DE ENVIO)
   async function finishCuration(updatedJson) {
     setCurationData(null);
     setLoading(true);
     setMsg("Enviando escolhas e iniciando renderização final...");
 
     try {
-      // Extrai apenas as URLs finais que o usuário escolheu
-      // assumindo que a estrutura do seu JSON tem a propriedade 'path' preenchida
       const URLsEscolhidas = updatedJson.map(topic => topic.imagens[0].path);
 
-      // Envia as escolhas para o novo endpoint do Java
+      // Enviando para a rota do Java que continuará o fluxo
       await client.post(`/videos/${jobId}/finalize`, { 
-        escolhas: URLsEscolhidas 
+        urlsEscolhidas: URLsEscolhidas 
       });
       
-      // Reinicia o polling para acompanhar o progresso da Fase B
       startPolling(jobId);
     } catch (error) {
       setMsg("Erro ao salvar curadoria.");
@@ -257,7 +243,6 @@ export default function UploadForm() {
 
   return (
     <div className="relative">
-      {/* SE TIVER CURADORIA, MOSTRA O MODAL DE VIDRO */}
       {curationData && (
         <MediaCurator 
           jobData={curationData} 
