@@ -252,7 +252,7 @@ export default function UploadForm() {
       }
       const [r, i, t, m] = await Promise.all([uploadFile(roteiro), uploadFile(intro), uploadFile(transicao), uploadFile(musica)]);
       const jobPayload = { caminhos: { roteiro: r, intro: i, transicao: t, musica: m }, tema, modo, token: "" };
-      const response = await client.post("/videos", { input: JSON.stringify(jobPayload) });
+      const response = await client.post("/videos", { inputData: JSON.stringify(jobPayload) });
       setJobId(response.data.id);
       startPolling(response.data.id);
       setMsg("Processando vídeo...");
