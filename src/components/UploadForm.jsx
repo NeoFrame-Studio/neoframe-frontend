@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom"; // Importado para fazer a navegação
 import client from "../api/client";
 
-// --- COMPONENTE DE CURADORIA (O RETÂNGULO DE VIDRO) ---
+// --- COMPONENTE DE CURADORIA (O RETÂNGULO DE VIDRO) - INTACTO ---
 function MediaCurator({ jobData, onFinish }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [images, setImages] = useState([]);
@@ -10,10 +11,8 @@ function MediaCurator({ jobData, onFinish }) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const currentTopic = jobData[currentIndex];
-  // Pegamos a frase de busca do primeiro item de imagem do tópico
   const currentImageData = currentTopic?.imagens?.[0];
 
-  // Sincroniza o termo de busca quando muda o tópico
   useEffect(() => {
     if (currentImageData?.frase_de_busca) {
       setSearchTerm(currentImageData.frase_de_busca);
@@ -29,10 +28,8 @@ function MediaCurator({ jobData, onFinish }) {
       
       console.log("DADOS RECEBIDOS DO BACKEND:", res.data);
 
-      // 1. Pega os dados recebidos
       let rawData = res.data;
 
-      // 2. Se o backend mandou uma String, forçamos a conversão para Objeto/Array JavaScript
       if (typeof rawData === "string") {
         try {
           rawData = JSON.parse(rawData);
@@ -41,10 +38,8 @@ function MediaCurator({ jobData, onFinish }) {
         }
       }
 
-      // 3. Garante que estamos pegando o array (caso venha dentro de .urls ou direto na raiz)
       const data = rawData.urls || rawData; 
       
-      // 4. Atualiza o estado
       setImages(Array.isArray(data) ? data : []);
       
     } catch (err) {
@@ -56,7 +51,6 @@ function MediaCurator({ jobData, onFinish }) {
   }
 
   function handleContinue() {
-    // Salva a URL escolhida no objeto que será devolvido ao Python
     if (currentImageData) {
       currentImageData.path = selectedUrl;
     }
@@ -64,7 +58,7 @@ function MediaCurator({ jobData, onFinish }) {
     if (currentIndex < jobData.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setSelectedUrl("");
-      setImages([]); // Limpa para carregar as próximas
+      setImages([]); 
     } else {
       onFinish(jobData);
     }
@@ -102,7 +96,6 @@ function MediaCurator({ jobData, onFinish }) {
           ) : (
             <div className="grid grid-cols-3 gap-4">
               {images.length > 0 ? images.map((img, i) => {
-                // Resolve o problema de ser String ou Objeto
                 const thumb = typeof img === 'string' ? img : img.thumbnail;
                 const full = typeof img === 'string' ? img : img.url;
 
@@ -147,7 +140,48 @@ function MediaCurator({ jobData, onFinish }) {
   );
 }
 
-// --- COMPONENTE PRINCIPAL (SEU FORMULÁRIO) ---
+// --- COMPONENTES AUXILIARES DE UI PARA O FORMULÁRIO ---
+function FileInputDropzone({ label, accept, file, setFile, icon }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-sm font-medium text-slate-400 px-1">{label}</label>
+      <div className="relative group">
+        <input 
+          type="file" 
+          accept={accept} 
+          onChange={(e) => setFile(e.target.files[0])} 
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+        />
+        <div className={`flex items-center gap-4 px-5 py-4 rounded-2xl border transition-all ${
+          file 
+            ? 'bg-indigo-500/10 border-indigo-500/30' 
+            : 'bg-white/[0.02] border-white/[0.05] group-hover:bg-white/[0.04] group-hover:border-white/[0.1]'
+        }`}>
+          <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${
+            file ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/[0.05] text-slate-500'
+          }`}>
+            {icon}
+          </div>
+          <div className="flex flex-col truncate">
+            {file ? (
+              <>
+                <span className="text-sm font-medium text-indigo-300 truncate">{file.name}</span>
+                <span className="text-xs text-indigo-400/70">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+              </>
+            ) : (
+              <>
+                <span className="text-sm font-medium text-slate-300">Selecionar arquivo</span>
+                <span className="text-xs text-slate-500">Formatos: {accept}</span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- COMPONENTE PRINCIPAL ---
 export default function UploadForm() {
   const [tema, setTema] = useState("");
   const [modo, setModo] = useState("manual");
@@ -219,7 +253,6 @@ export default function UploadForm() {
     }, 2000);
   }
 
-  // 🚀 RETOMAR APÓS CURADORIA (AJUSTADO APENAS A CHAVE DE ENVIO)
   async function finishCuration(updatedJson) {
     setCurationData(null);
     setLoading(true);
@@ -228,7 +261,6 @@ export default function UploadForm() {
     try {
       const URLsEscolhidas = updatedJson.map(topic => topic.imagens[0].path);
 
-      // Enviando para a rota do Java que continuará o fluxo
       await client.post(`/videos/${jobId}/finalize`, { 
         urlsEscolhidas: URLsEscolhidas 
       });
@@ -263,7 +295,34 @@ export default function UploadForm() {
   }
 
   return (
-    <div className="relative">
+    // Ajustado o padding top (pt-32) para dar espaço à navegação flutuante
+    <div className="relative min-h-screen bg-[#09090b] text-slate-200 overflow-hidden font-sans selection:bg-indigo-500/30 pt-32 pb-20 px-6">
+      
+      {/* EFEITO AMBIENT LIGHT / LIQUID GLASS */}
+      <div className="fixed top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none" />
+      <div className="fixed bottom-[-20%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-teal-600/10 blur-[120px] pointer-events-none" />
+
+      {/* NAVEGAÇÃO FLUTUANTE PADRÃO NEOFRAME */}
+      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
+        <div className="flex items-center gap-6 px-6 py-3 bg-white/[0.03] backdrop-blur-2xl border border-white/[0.05] rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+          <Link to="/dashboard" className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-teal-300 tracking-wider hover:opacity-80 transition-opacity">
+            NEOFRAME
+          </Link>
+          <div className="w-[1px] h-4 bg-white/10" />
+          <Link 
+            to="/dashboard" 
+            className="flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors group"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Voltar ao Studio
+          </Link>
+        </div>
+      </nav>
+
+      {/* MODAL DE CURADORIA */}
       {curationData && (
         <MediaCurator 
           jobData={curationData} 
@@ -271,41 +330,160 @@ export default function UploadForm() {
         />
       )}
 
-      <form onSubmit={handleSubmit} className="bg-slate-900 p-6 rounded-2xl space-y-4 border border-slate-800">
-        <div><label className="block mb-1 text-slate-400">Roteiro (.txt)</label><input type="file" onChange={(e) => setRoteiro(e.target.files[0])} className="text-sm" /></div>
-        <div><label className="block mb-1 text-slate-400">Intro (.mp4)</label><input type="file" onChange={(e) => setIntro(e.target.files[0])} className="text-sm" /></div>
-        <div><label className="block mb-1 text-slate-400">Transição (.gif)</label><input type="file" onChange={(e) => setTransicao(e.target.files[0])} className="text-sm" /></div>
-        <div><label className="block mb-1 text-slate-400">Música (.mp3)</label><input type="file" onChange={(e) => setMusica(e.target.files[0])} className="text-sm" /></div>
+      {/* ÁREA CENTRAL DO FORMULÁRIO */}
+      <div className="relative z-10 max-w-3xl mx-auto">
         
-        <input value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Tema do Vídeo" className="w-full p-3 rounded bg-slate-800 text-white outline-none focus:ring-2 focus:ring-blue-500" />
-        
-        <select value={modo} onChange={(e) => setModo(e.target.value)} className="w-full p-3 rounded bg-slate-800 text-white outline-none">
-          <option value="manual">Modo Manual (com Curadoria)</option>
-          <option value="auto">Modo Automático</option>
-        </select>
+        {/* Cabeçalho */}
+        <header className="mb-10 text-center">
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-100 mb-3">
+            Setup da Renderização
+          </h1>
+          <p className="text-slate-400">Faça o upload dos 4 arquivos base e configure a engine.</p>
+        </header>
 
-        <button disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 p-4 rounded-xl font-bold transition-colors">
-          {loading ? "Processando..." : "Gerar Vídeo"}
-        </button>
+        {/* Card Glass Principal */}
+        <div className="p-8 sm:p-10 rounded-[2.5rem] bg-white/[0.02] border border-white/[0.05] backdrop-blur-xl shadow-2xl">
+          
+          <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+            
+            {/* Grid de Uploads (2 colunas em telas maiores) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              <FileInputDropzone 
+                label="1. Roteiro" 
+                accept=".txt" 
+                file={roteiro} 
+                setFile={setRoteiro} 
+                icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>}
+              />
 
-        {msg && <div className="text-sm text-blue-400 text-center mt-2">{msg}</div>}
+              <FileInputDropzone 
+                label="2. Música de Fundo" 
+                accept="audio/mpeg" 
+                file={musica} 
+                setFile={setMusica} 
+                icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>}
+              />
 
-        {loading && (
-          <div className="space-y-2 mt-4">
-            <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
-              <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${progress}%` }} />
+              <FileInputDropzone 
+                label="3. Vídeo de Introdução" 
+                accept="video/mp4" 
+                file={intro} 
+                setFile={setIntro} 
+                icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>}
+              />
+
+              <FileInputDropzone 
+                label="4. Vídeo de Transição" 
+                accept="video/mp4, image/gif" 
+                file={transicao} 
+                setFile={setTransicao} 
+                icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path><polyline points="16 16 12 12 8 16"></polyline></svg>}
+              />
+
             </div>
-            <div className="text-center text-xs text-slate-500">{progress}% - {status}</div>
-          </div>
-        )}
 
-        {videoUrl && (
-          <div className="space-y-4 mt-6">
-            <video controls className="w-full rounded-xl border border-white/10" src={videoUrl} />
-            <a href={videoUrl} target="_blank" download className="block bg-green-600 hover:bg-green-700 p-3 rounded-xl text-center font-bold">Baixar Resultado</a>
-          </div>
-        )}
-      </form>
+            <div className="w-full h-[1px] bg-white/[0.05]" />
+
+            {/* Configurações Extras (Tema e Modo) */}
+            <div className="flex flex-col gap-5">
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2 px-1">Tema / Contexto do Vídeo</label>
+                <input 
+                  value={tema} 
+                  onChange={(e) => setTema(e.target.value)} 
+                  placeholder="Ex: Curiosidades sobre Marte" 
+                  className="w-full px-5 py-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.05] focus:border-indigo-500/50 focus:bg-white/[0.05] text-slate-200 outline-none transition-all placeholder:text-slate-600" 
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2 px-1">Workflow da IA</label>
+                <div className="relative">
+                  <select 
+                    value={modo} 
+                    onChange={(e) => setModo(e.target.value)} 
+                    className="w-full px-5 py-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.05] focus:border-indigo-500/50 focus:bg-white/[0.05] text-slate-200 outline-none transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="manual" className="bg-slate-900 text-slate-200">Modo Manual (Curadoria no Meio do Processo)</option>
+                    <option value="auto" className="bg-slate-900 text-slate-200">Modo Automático (A IA decide tudo)</option>
+                  </select>
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mensagens de Feedback */}
+            {msg && (
+              <div className={`p-4 rounded-2xl border text-sm flex items-center gap-3 ${
+                msg.includes("Erro") 
+                  ? "bg-red-500/10 border-red-500/20 text-red-400" 
+                  : "bg-indigo-500/10 border-indigo-500/20 text-indigo-300"
+              }`}>
+                {loading && !msg.includes("Erro") && (
+                  <div className="w-4 h-4 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
+                )}
+                <span>{msg}</span>
+              </div>
+            )}
+
+            {/* Barra de Progresso Glass */}
+            {loading && (
+              <div className="space-y-3 p-5 rounded-2xl bg-white/[0.01] border border-white/[0.03]">
+                <div className="flex justify-between text-xs font-medium text-slate-400">
+                  <span>{status || 'Iniciando...'}</span>
+                  <span>{progress}%</span>
+                </div>
+                <div className="w-full bg-black/40 rounded-full h-1.5 overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-indigo-500 to-teal-400 h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
+                    style={{ width: `${progress}%` }} 
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Botão de Submit */}
+            <button 
+              type="submit"
+              disabled={loading} 
+              className="mt-2 w-full flex items-center justify-center px-6 py-4 rounded-full bg-white text-black font-medium hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+            >
+              {loading ? "Renderização em Andamento..." : "Iniciar Pipeline"}
+            </button>
+
+            {/* Resultado Final (Download) */}
+            {videoUrl && (
+              <div className="mt-4 p-6 rounded-3xl bg-indigo-500/5 border border-indigo-500/20 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
+                <div className="flex items-center gap-3 text-indigo-300 font-medium px-2">
+                  <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                  Renderização Concluída
+                </div>
+                
+                <video 
+                  controls 
+                  className="w-full rounded-2xl border border-white/10 shadow-2xl bg-black" 
+                  src={videoUrl} 
+                />
+                
+                <a 
+                  href={videoUrl} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  download 
+                  className="flex items-center justify-center gap-2 w-full px-6 py-4 rounded-full bg-indigo-600 text-white font-medium hover:bg-indigo-500 transition-colors shadow-lg"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Baixar Arquivo Final
+                </a>
+              </div>
+            )}
+
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

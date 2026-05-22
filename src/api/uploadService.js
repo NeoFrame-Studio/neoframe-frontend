@@ -1,11 +1,11 @@
-import api from './api';
+import client from '../api/client';
 import axios from 'axios';
 
 export const uploadToS3 = async (file, fileType) => {
   try {
     // 1. Pede ao seu backend Java uma URL segura de upload (Pre-signed URL)
     // fileType pode ser 'roteiro', 'musica', 'intro' ou 'transicao'
-    const { data } = await api.post('/storage/presigned-url', {
+    const { data } = await client.post('/storage/presigned-url', {
       fileName: file.name,
       contentType: file.type,
       type: fileType 
