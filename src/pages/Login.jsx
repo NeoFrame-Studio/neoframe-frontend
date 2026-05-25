@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import client from '../api/client';
 
 export function Login() {
+
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -16,7 +19,7 @@ export function Login() {
     try {
       const response = await client.post('/auth/login', { email, password });
       localStorage.setItem('@NeoFrame:token', response.data.token);
-      window.location.href = '/dashboard';
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Erro ao fazer login. Verifique suas credenciais.');
     } finally {
