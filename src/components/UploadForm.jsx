@@ -201,19 +201,6 @@ export default function UploadForm() {
 
   async function uploadFile(file, uploadUrl) {
     if (!uploadUrl) {
-      throw new Error("URL de upload não fornecida para o arquivo.");
-    }
-
-    // Faz o PUT diretamente para o link assinado do Supabase
-    await fetch(uploadUrl, { 
-      method: "PUT", 
-      body: file, 
-      headers: { "Content-Type": file.type || "application/octet-stream" } 
-    });
-  }
-
-  async function uploadFile(file, uploadUrl) {
-    if (!uploadUrl) {
       throw new Error("URL de upload não fornecida.");
     }
 
