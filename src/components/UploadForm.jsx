@@ -327,13 +327,12 @@ export default function UploadForm() {
         token: "" 
       };
 
-      const response = await client.post("/videos/jobs", { inputData: JSON.stringify(jobPayload) });
+      // CORREÇÃO: Envia o payload puro, sem envelopar em string
+      const response = await client.post("/videos/jobs", jobPayload);
 
-      // CORREÇÃO AQUI: Mude de .id para .jobId para casar com o DTO do Java
       const realJobId = response.data.jobId; 
-
       setJobId(realJobId);
-      startPolling(realJobId); // Agora vai disparar /api/v1/videos/d924600f-ca7...
+      startPolling(realJobId);
       setMsg("Processando vídeo...");
 
     } catch (error) {
