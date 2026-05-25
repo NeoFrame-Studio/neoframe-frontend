@@ -200,7 +200,8 @@ export default function UploadForm() {
   const [curationData, setCurationData] = useState(null);
 
   async function uploadFile(file) {
-    const res = await client.post("/s3/upload-url", { fileName: file.name });
+    const res = await client.post('/storage/upload-urls', { 
+      fileTypes: ["script", "background_music", "intro_video", "transition_video"] });
     const { url, key } = res.data;
     await fetch(url, { method: "PUT", body: file, headers: { "Content-Type": file.type || "application/octet-stream" } });
     return key;
