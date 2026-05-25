@@ -199,12 +199,17 @@ export default function UploadForm() {
 
   const [curationData, setCurationData] = useState(null);
 
-  async function uploadFile(file) {
-    const res = await client.post('/storage/upload-urls', { 
-      fileTypes: ["script", "background_music", "intro_video", "transition_video"] });
-    const { url, key } = res.data;
-    await fetch(url, { method: "PUT", body: file, headers: { "Content-Type": file.type || "application/octet-stream" } });
-    return key;
+  async function uploadFile(file, uploadUrl) {
+    if (!uploadUrl) {
+      throw new Error("URL de upload não fornecida para o arquivo.");
+    }
+
+    // Faz o PUT diretamente para o link assinado do Supabase
+    await fetch(uploadUrl, { 
+      method: "PUT", 
+      body: file, 
+      headers: { "Content-Type": file.type || "application/octet-stream" } 
+    });
   }
 
   function startPolling(id) {
@@ -278,19 +283,51 @@ export default function UploadForm() {
     try {
       setLoading(true);
       setMsg("Enviando arquivos...");
+      
       if (!roteiro || !intro || !transicao || !musica) {
         setMsg("Selecione todos os arquivos!");
         setLoading(false);
         return;
       }
-      const [r, i, t, m] = await Promise.all([uploadFile(roteiro), uploadFile(intro), uploadFile(transicao), uploadFile(musica)]);
-      const jobPayload = { caminhos: { roteiro: r, intro: i, transicao: t, musica: m }, tema, modo, token: "" };
+
+      // PASSO A: Faz UM ÚNICO POST para pegar as 4 URLs do lote
+      const resUrls = await client.post('/storage/upload-urls', { 
+        fileTypes: ["script", "background_music", "intro_video", "transition_video"] 
+      });
+
+      const urlsDoSupabase = resUrls.data;
+
+      // PASSO B: Envia os 4 arquivos em paralelo, cada um para a sua respectiva 'uploadUrl'
+      await Promise.all([
+        uploadFile(roteiro, urlsDoSupabase.script?.uploadUrl),
+        uploadFile(intro, urlsDoSupabase.intro_video?.uploadUrl),
+        uploadFile(transicao, urlsDoSupabase.transition_video?.uploadUrl),
+        uploadFile(musica, urlsDoSupabase.background_music?.uploadUrl)
+      ]);
+
+      // PASSO C: Monta o payload para o Python/Core usando a 'finalUrl' (Link público do arquivo)
+      const jobPayload = { 
+        caminhos: { 
+          roteiro: urlsDoSupabase.script?.finalUrl, 
+          intro: urlsDoSupabase.intro_video?.finalUrl, 
+          transicao: urlsDoSupabase.transition_video?.finalUrl, 
+          musica: urlsDoSupabase.background_music?.finalUrl 
+        }, 
+        tema, 
+        modo, 
+        token: "" 
+      };
+
+      // Envia para iniciar o processamento do vídeo
       const response = await client.post("/videos", { inputData: JSON.stringify(jobPayload) });
+      
       setJobId(response.data.id);
       startPolling(response.data.id);
       setMsg("Processando vídeo...");
+
     } catch (error) {
-      setMsg("Erro ao processar.");
+      console.error("Erro no fluxo de upload:", error);
+      setMsg("Erro ao processar o upload dos arquivos.");
       setLoading(false);
     }
   }
