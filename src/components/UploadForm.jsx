@@ -328,7 +328,7 @@ export default function UploadForm() {
       };
 
       // Envia para iniciar o processamento do vídeo
-      const response = await client.post("/videos", { inputData: JSON.stringify(jobPayload) });
+      const response = await client.post("/videos/jobs", { inputData: JSON.stringify(jobPayload) });
       
       setJobId(response.data.id);
       startPolling(response.data.id);
