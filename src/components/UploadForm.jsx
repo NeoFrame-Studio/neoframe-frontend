@@ -212,6 +212,28 @@ export default function UploadForm() {
     });
   }
 
+  async function uploadFile(file, uploadUrl) {
+    if (!uploadUrl) {
+      throw new Error("URL de upload não fornecida.");
+    }
+
+    // Deixamos o fetch gerenciar o body sem forçar headers complexos
+    // que possam quebrar a assinatura estrita do token do Supabase
+    const response = await fetch(uploadUrl, { 
+      method: "PUT", 
+      body: file,
+      headers: {
+        // Forçar 'multipart/form-data' ou remover o header resolve o 400 do Supabase
+        "Content-Type": file.type || "application/octet-stream"
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Falha no upload do Supabase: ${response.status} - ${errorText}`);
+    }
+  }
+
   function startPolling(id) {
     const interval = setInterval(async () => {
       try {
