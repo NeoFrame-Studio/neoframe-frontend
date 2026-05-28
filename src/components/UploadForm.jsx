@@ -25,10 +25,10 @@ function MediaCurator({ jobData, onFinish }) {
     if (!term) return;
     setLoading(true);
     try {
-      const PYTHON_SEARCH_IMAGE_API = import.meta.env.PYTHON_SEARCH_IMAGE_API;
+      const VITE_PYTHON_SEARCH_IMAGE_API = import.meta.env.VITE_PYTHON_SEARCH_IMAGE_API;
 
       const res = await axios.get(
-        `${PYTHON_SEARCH_IMAGE_API}?q=${encodeURIComponent(term)}`
+        `${VITE_PYTHON_SEARCH_IMAGE_API}?q=${encodeURIComponent(term)}`
       );
       
       console.log("DADOS RECEBIDOS DO BACKEND:", res.data);
