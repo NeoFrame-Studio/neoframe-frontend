@@ -24,7 +24,11 @@ function MediaCurator({ jobData, onFinish }) {
     if (!term) return;
     setLoading(true);
     try {
-      const res = await client.get(`/scraper/search?q=${encodeURIComponent(term)}`);
+      const PYTHON_SEARCH_IMAGE_API = import.meta.env.PYTHON_SEARCH_IMAGE_API;
+
+      const res = await axios.get(
+        `${PYTHON_SEARCH_IMAGE_API}?q=${encodeURIComponent(term)}`
+      );
       
       console.log("DADOS RECEBIDOS DO BACKEND:", res.data);
 
