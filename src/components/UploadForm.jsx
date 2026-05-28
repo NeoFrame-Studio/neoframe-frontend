@@ -43,7 +43,8 @@ function MediaCurator({ jobData, onFinish }) {
         }
       }
 
-      const data = rawData.urls || rawData; 
+      // CORREÇÃO AQUI: Adicionado o "rawData.results" para ler o array que vem do seu Python
+      const data = rawData.results || rawData.urls || rawData; 
       
       setImages(Array.isArray(data) ? data : []);
       
@@ -70,8 +71,34 @@ function MediaCurator({ jobData, onFinish }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4">
-      <div className="bg-slate-900 border border-white/10 p-8 rounded-[2rem] shadow-2xl w-full max-w-5xl text-white">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 backdrop-blur-xl p-4">
+      <div
+        className="
+          relative
+          overflow-hidden
+
+          bg-white/[0.04]
+          border border-white/[0.08]
+
+          p-8
+          rounded-[2rem]
+
+          shadow-[0_8px_32px_rgba(0,0,0,0.35)]
+
+          w-full
+          max-w-5xl
+          text-white
+
+          backdrop-blur-3xl
+          backdrop-saturate-150
+
+          before:absolute
+          before:inset-0
+          before:rounded-[2rem]
+          before:bg-white/[0.03]
+          before:pointer-events-none
+        "
+      >
         
         <div className="mb-6 flex justify-between items-end">
            <div>
@@ -209,13 +236,10 @@ export default function UploadForm() {
       throw new Error("URL de upload não fornecida.");
     }
 
-    // Deixamos o fetch gerenciar o body sem forçar headers complexos
-    // que possam quebrar a assinatura estrita do token do Supabase
     const response = await fetch(uploadUrl, { 
       method: "PUT", 
       body: file,
       headers: {
-        // Forçar 'multipart/form-data' ou remover o header resolve o 400 do Supabase
         "Content-Type": file.type || "application/octet-stream"
       }
     });
@@ -304,14 +328,12 @@ export default function UploadForm() {
         return;
       }
 
-      // PASSO A: Faz UM ÚNICO POST para pegar as 4 URLs do lote
       const resUrls = await client.post('/storage/upload-urls', { 
         fileTypes: ["script", "background_music", "intro_video", "transition_video"] 
       });
 
       const urlsDoSupabase = resUrls.data;
 
-      // PASSO B: Envia os 4 arquivos em paralelo, cada um para a sua respectiva 'uploadUrl'
       await Promise.all([
         uploadFile(roteiro, urlsDoSupabase.script?.uploadUrl),
         uploadFile(intro, urlsDoSupabase.intro_video?.uploadUrl),
@@ -319,7 +341,6 @@ export default function UploadForm() {
         uploadFile(musica, urlsDoSupabase.background_music?.uploadUrl)
       ]);
 
-      // PASSO C: Monta o payload para o Python/Core usando a 'finalUrl' (Link público do arquivo)
       const jobPayload = { 
         caminhos: { 
           roteiro: urlsDoSupabase.script?.finalUrl, 
@@ -332,7 +353,6 @@ export default function UploadForm() {
         token: "" 
       };
 
-      // CORREÇÃO: Envia o payload puro, sem envelopar em string
       const response = await client.post("/videos/jobs", jobPayload);
 
       const realJobId = response.data.jobId; 
@@ -342,20 +362,17 @@ export default function UploadForm() {
 
     } catch (error) {
       console.error("Erro no fluxo de upload:", error);
-      setMsg("Erro ao processar o upload dos arquivos.");
+      setMsg("Erro ao processar the upload dos arquivos.");
       setLoading(false);
     }
   }
 
   return (
-    // Ajustado o padding top (pt-32) para dar espaço à navegação flutuante
     <div className="relative min-h-screen bg-[#09090b] text-slate-200 overflow-hidden font-sans selection:bg-indigo-500/30 pt-32 pb-20 px-6">
       
-      {/* EFEITO AMBIENT LIGHT / LIQUID GLASS */}
       <div className="fixed top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none" />
       <div className="fixed bottom-[-20%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-teal-600/10 blur-[120px] pointer-events-none" />
 
-      {/* NAVEGAÇÃO FLUTUANTE PADRÃO NEOFRAME */}
       <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
         <div className="flex items-center gap-6 px-6 py-3 bg-white/[0.03] backdrop-blur-2xl border border-white/[0.05] rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
           <Link to="/dashboard" className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-teal-300 tracking-wider hover:opacity-80 transition-opacity">
@@ -375,7 +392,6 @@ export default function UploadForm() {
         </div>
       </nav>
 
-      {/* MODAL DE CURADORIA */}
       {curationData && (
         <MediaCurator 
           jobData={curationData} 
@@ -383,10 +399,8 @@ export default function UploadForm() {
         />
       )}
 
-      {/* ÁREA CENTRAL DO FORMULÁRIO */}
       <div className="relative z-10 max-w-3xl mx-auto">
         
-        {/* Cabeçalho */}
         <header className="mb-10 text-center">
           <h1 className="text-4xl font-semibold tracking-tight text-slate-100 mb-3">
             Setup da Renderização
@@ -394,12 +408,10 @@ export default function UploadForm() {
           <p className="text-slate-400">Faça o upload dos 4 arquivos base e configure a engine.</p>
         </header>
 
-        {/* Card Glass Principal */}
         <div className="p-8 sm:p-10 rounded-[2.5rem] bg-white/[0.02] border border-white/[0.05] backdrop-blur-xl shadow-2xl">
           
           <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             
-            {/* Grid de Uploads (2 colunas em telas maiores) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               <FileInputDropzone 
@@ -438,7 +450,6 @@ export default function UploadForm() {
 
             <div className="w-full h-[1px] bg-white/[0.05]" />
 
-            {/* Configurações Extras (Tema e Modo) */}
             <div className="flex flex-col gap-5">
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-2 px-1">Tema / Contexto do Vídeo</label>
@@ -468,7 +479,6 @@ export default function UploadForm() {
               </div>
             </div>
 
-            {/* Mensagens de Feedback */}
             {msg && (
               <div className={`p-4 rounded-2xl border text-sm flex items-center gap-3 ${
                 msg.includes("Erro") 
@@ -482,7 +492,6 @@ export default function UploadForm() {
               </div>
             )}
 
-            {/* Barra de Progresso Glass */}
             {loading && (
               <div className="space-y-3 p-5 rounded-2xl bg-white/[0.01] border border-white/[0.03]">
                 <div className="flex justify-between text-xs font-medium text-slate-400">
@@ -498,7 +507,6 @@ export default function UploadForm() {
               </div>
             )}
 
-            {/* Botão de Submit */}
             <button 
               type="submit"
               disabled={loading} 
@@ -507,7 +515,6 @@ export default function UploadForm() {
               {loading ? "Renderização em Andamento..." : "Iniciar Pipeline"}
             </button>
 
-            {/* Resultado Final (Download) */}
             {videoUrl && (
               <div className="mt-4 p-6 rounded-3xl bg-indigo-500/5 border border-indigo-500/20 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
                 <div className="flex items-center gap-3 text-indigo-300 font-medium px-2">
