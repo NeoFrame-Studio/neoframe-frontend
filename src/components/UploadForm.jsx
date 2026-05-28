@@ -485,7 +485,7 @@ export default function UploadForm() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#09090b] text-slate-200">
+    <div className="relative min-h-screen bg-[#09090b] text-slate-200 overflow-hidden font-sans selection:bg-indigo-500/30 pt-32 pb-20 px-6">
       {curationData && (
         <MediaCurator
           jobData={curationData}
@@ -493,7 +493,180 @@ export default function UploadForm() {
         />
       )}
 
-      {/* RESTANTE DO JSX CONTINUA IGUAL */}
+      <div className="fixed top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none" />
+      <div className="fixed bottom-[-20%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-teal-600/10 blur-[120px] pointer-events-none" />
+
+      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
+        <div className="flex items-center gap-6 px-6 py-3 bg-white/[0.03] backdrop-blur-2xl border border-white/[0.05] rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+          <Link to="/dashboard" className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-teal-300 tracking-wider hover:opacity-80 transition-opacity">
+            NEOFRAME
+          </Link>
+          <div className="w-[1px] h-4 bg-white/10" />
+          <Link 
+            to="/dashboard" 
+            className="flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors group"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Voltar ao Studio
+          </Link>
+        </div>
+      </nav>
+
+      {curationData && (
+        <MediaCurator 
+          jobData={curationData} 
+          onFinish={finishCuration} 
+        />
+      )}
+
+      <div className="relative z-10 max-w-3xl mx-auto">
+        
+        <header className="mb-10 text-center">
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-100 mb-3">
+            Setup da Renderização
+          </h1>
+          <p className="text-slate-400">Faça o upload dos 4 arquivos base e configure a engine.</p>
+        </header>
+
+        <div className="p-8 sm:p-10 rounded-[2.5rem] bg-white/[0.02] border border-white/[0.05] backdrop-blur-xl shadow-2xl">
+          
+          <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              <FileInputDropzone 
+                label="1. Roteiro" 
+                accept=".txt" 
+                file={roteiro} 
+                setFile={setRoteiro} 
+                icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>}
+              />
+
+              <FileInputDropzone 
+                label="2. Música de Fundo" 
+                accept="audio/mpeg" 
+                file={musica} 
+                setFile={setMusica} 
+                icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>}
+              />
+
+              <FileInputDropzone 
+                label="3. Vídeo de Introdução" 
+                accept="video/mp4" 
+                file={intro} 
+                setFile={setIntro} 
+                icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>}
+              />
+
+              <FileInputDropzone 
+                label="4. Vídeo de Transição" 
+                accept="video/mp4, image/gif" 
+                file={transicao} 
+                setFile={setTransicao} 
+                icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path><polyline points="16 16 12 12 8 16"></polyline></svg>}
+              />
+
+            </div>
+
+            <div className="w-full h-[1px] bg-white/[0.05]" />
+
+            <div className="flex flex-col gap-5">
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2 px-1">Tema / Contexto do Vídeo</label>
+                <input 
+                  value={tema} 
+                  onChange={(e) => setTema(e.target.value)} 
+                  placeholder="Ex: Curiosidades sobre Marte" 
+                  className="w-full px-5 py-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.05] focus:border-indigo-500/50 focus:bg-white/[0.05] text-slate-200 outline-none transition-all placeholder:text-slate-600" 
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2 px-1">Workflow da IA</label>
+                <div className="relative">
+                  <select 
+                    value={modo} 
+                    onChange={(e) => setModo(e.target.value)} 
+                    className="w-full px-5 py-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.05] focus:border-indigo-500/50 focus:bg-white/[0.05] text-slate-200 outline-none transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="manual" className="bg-slate-900 text-slate-200">Modo Manual (Curadoria no Meio do Processo)</option>
+                    <option value="auto" className="bg-slate-900 text-slate-200">Modo Automático (A IA decide tudo)</option>
+                  </select>
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {msg && (
+              <div className={`p-4 rounded-2xl border text-sm flex items-center gap-3 ${
+                msg.includes("Erro") 
+                  ? "bg-red-500/10 border-red-500/20 text-red-400" 
+                  : "bg-indigo-500/10 border-indigo-500/20 text-indigo-300"
+              }`}>
+                {loading && !msg.includes("Erro") && (
+                  <div className="w-4 h-4 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
+                )}
+                <span>{msg}</span>
+              </div>
+            )}
+
+            {loading && (
+              <div className="space-y-3 p-5 rounded-2xl bg-white/[0.01] border border-white/[0.03]">
+                <div className="flex justify-between text-xs font-medium text-slate-400">
+                  <span>{status || 'Iniciando...'}</span>
+                  <span>{progress}%</span>
+                </div>
+                <div className="w-full bg-black/40 rounded-full h-1.5 overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-indigo-500 to-teal-400 h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
+                    style={{ width: `${progress}%` }} 
+                  />
+                </div>
+              </div>
+            )}
+
+            <button 
+              type="submit"
+              disabled={loading} 
+              className="mt-2 w-full flex items-center justify-center px-6 py-4 rounded-full bg-white text-black font-medium hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+            >
+              {loading ? "Renderização em Andamento..." : "Iniciar Pipeline"}
+            </button>
+
+            {videoUrl && (
+              <div className="mt-4 p-6 rounded-3xl bg-indigo-500/5 border border-indigo-500/20 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
+                <div className="flex items-center gap-3 text-indigo-300 font-medium px-2">
+                  <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                  Renderização Concluída
+                </div>
+                
+                <video 
+                  controls 
+                  className="w-full rounded-2xl border border-white/10 shadow-2xl bg-black" 
+                  src={videoUrl} 
+                />
+                
+                <a 
+                  href={videoUrl} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  download 
+                  className="flex items-center justify-center gap-2 w-full px-6 py-4 rounded-full bg-indigo-600 text-white font-medium hover:bg-indigo-500 transition-colors shadow-lg"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Baixar Arquivo Final
+                </a>
+              </div>
+            )}
+
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
