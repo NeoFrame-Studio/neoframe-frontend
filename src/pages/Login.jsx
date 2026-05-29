@@ -131,8 +131,8 @@ export function Login() {
             <hr className="flex-1 border-white/5" />
           </div>
 
-          {/* BOTÃO DO GOOGLE (Corrigido para ocupar 100% da largura) */}
-          <div className="w-full flex justify-center [&>div]:w-full">
+          {/* BOTÃO DO GOOGLE */}
+          <div className="w-full flex justify-center [&>div]:!w-full [&>div>div]:!w-full [&>div>div>div]:!w-full [&_iframe]:!w-full">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() => setError('Falha ao abrir pop-up do Google')}
@@ -140,7 +140,7 @@ export function Login() {
               size="large"
               shape="pill"
               text="continue_with"
-              width="100%" 
+              width="400"
             />
           </div>
 
