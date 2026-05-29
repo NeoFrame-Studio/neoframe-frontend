@@ -10,8 +10,8 @@ import { Registro } from "./pages/Registro";
 // Proteção de rotas
 import { RequireAuth } from "./pages/RequireAuth";
 
-// Substitua pelo seu ID real gerado no Google Cloud
-const GOOGLE_CLIENT_ID = "SEU_CLIENT_ID_AQUI.apps.googleusercontent.com";
+// Troque a string fixa por isso:
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function App() {
 
