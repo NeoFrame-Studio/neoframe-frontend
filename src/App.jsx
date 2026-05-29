@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // Páginas
 import { Dashboard } from "./pages/Dashboard";
@@ -9,62 +10,67 @@ import { Registro } from "./pages/Registro";
 // Proteção de rotas
 import { RequireAuth } from "./pages/RequireAuth";
 
+// Substitua pelo seu ID real gerado no Google Cloud
+const GOOGLE_CLIENT_ID = "SEU_CLIENT_ID_AQUI.apps.googleusercontent.com";
+
 export default function App() {
 
   // verifica se existe token salvo
   const isAuthenticated = localStorage.getItem("@NeoFrame:token");
 
   return (
-    <BrowserRouter>
-      <Routes>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <BrowserRouter>
+        <Routes>
 
-        {/* Rota raiz inteligente */}
-        <Route
-          path="/"
-          element={
-            isAuthenticated
-              ? <Navigate to="/dashboard" replace />
-              : <Navigate to="/login" replace />
-          }
-        />
+          {/* Rota raiz inteligente */}
+          <Route
+            path="/"
+            element={
+              isAuthenticated
+                ? <Navigate to="/dashboard" replace />
+                : <Navigate to="/login" replace />
+            }
+          />
 
-        {/* =========================
-            ROTAS PÚBLICAS
-        ========================== */}
+          {/* =========================
+              ROTAS PÚBLICAS
+          ========================== */}
 
-        <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login />} />
 
-        <Route path="/registro" element={<Registro />} />
+          <Route path="/registro" element={<Registro />} />
 
-        {/* =========================
-            ROTAS PRIVADAS
-        ========================== */}
+          {/* =========================
+              ROTAS PRIVADAS
+          ========================== */}
 
-        <Route
-          path="/dashboard"
-          element={
-            <RequireAuth>
-              <Dashboard />
-            </RequireAuth>
-          }
-        />
+          <Route
+            path="/dashboard"
+            element={
+              <RequireAuth>
+                <Dashboard />
+              </RequireAuth>
+            }
+          />
 
-        <Route
-          path="/upload"
-          element={
-            <RequireAuth>
-              <UploadForm />
-            </RequireAuth>
-          }
-        />
+          <Route
+            path="/upload"
+            element={
+              <RequireAuth>
+                <UploadForm />
+              </RequireAuth>
+            }
+          />
 
-        {/* Qualquer rota inexistente */}
-        <Route
-          path="*"
-          element={<Navigate to="/" replace />}
-        />
+          {/* Qualquer rota inexistente */}
+          <Route
+            path="*"
+            element={<Navigate to="/" replace />}
+          />
 
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   );
 }
