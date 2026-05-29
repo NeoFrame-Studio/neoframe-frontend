@@ -35,17 +35,12 @@ export function Login() {
     setError('');
     
     try {
-      // Pega o JWT do Google e envia para o backend Java validar
       const googleToken = credentialResponse.credential;
-      
       const response = await client.post('/auth/google', { 
         token: googleToken 
       });
 
-      // Salva o token do NeoFrame gerado pelo Java
       localStorage.setItem('@NeoFrame:token', response.data.token);
-      
-      // Redireciona
       navigate('/dashboard');
     } catch (err) {
       setError('Erro ao autenticar com o Google no servidor.');
@@ -136,8 +131,8 @@ export function Login() {
             <hr className="flex-1 border-white/5" />
           </div>
 
-          {/* BOTÃO OFICIAL DO GOOGLE */}
-          <div className="flex justify-center w-full [&>div]:w-full [&>div>div]:!w-full [&_iframe]:!w-full">
+          {/* BOTÃO DO GOOGLE (Corrigido para ocupar 100% da largura) */}
+          <div className="w-full flex justify-center [&>div]:w-full">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() => setError('Falha ao abrir pop-up do Google')}
@@ -145,6 +140,7 @@ export function Login() {
               size="large"
               shape="pill"
               text="continue_with"
+              width="100%" 
             />
           </div>
 
