@@ -132,16 +132,45 @@ export function Login() {
           </div>
 
           {/* BOTÃO DO GOOGLE (Corrigido para ocupar 100% da largura) */}
-          <div className="w-full flex justify-center [&>div]:w-full">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setError('Falha ao abrir pop-up do Google')}
-              theme="outline"
-              size="large"
-              shape="pill"
-              text="continue_with"
-              width="100%" 
-            />
+          {/* BOTÃO DO GOOGLE */}
+          <div className="w-full flex justify-center">
+
+            {/* CONTAINER FIXO */}
+            <div
+              className="
+                relative
+                w-full
+                h-[44px]
+                flex
+                items-center
+                justify-center
+                overflow-hidden
+              "
+            >
+
+              {/* CENTRALIZA O IFRAME DO GOOGLE */}
+              <div
+                className="
+                  absolute
+                  left-1/2
+                  -translate-x-1/2
+                "
+              >
+
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setError('Falha ao abrir pop-up do Google')}
+                  theme="outline"
+                  size="large"
+                  shape="pill"
+                  text="continue_with"
+                  width="380"
+                />
+
+              </div>
+
+            </div>
+
           </div>
 
           <div className="mt-8 text-center text-sm text-slate-500">
